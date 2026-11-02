@@ -1,249 +1,117 @@
 # 需求规格说明书：New API 内网 MCP 注册、透明反代与角色权限管控
 
-## Problem Statement (问题陈述)
+## Problem Statement
 
-随着企业大模型应用的深入，员工个人电脑上的桌面协同客户端（**TPCowork**）需要频繁调用企业内网自建或采购的共享工具服务（**MCP，Model Context Protocol**），如企业私有知识库检索、内网数据库只读查询、内部系统工单与报表生成等。
+在企业大模型落地实践中，各业务部门对企业内网自建或采购的工具服务（MCP，Model Context Protocol）需求日益迫切，如内网私有知识库检索、核心业务数据库只读查询、自动化任务脚本执行等。
 
-然而，在现有的企业网络与网关拓扑中，面临如下核心痛点：
-1. **网络与安全边界风险**：内网 MCP 服务通常包含企业敏感数据与内部 API 鉴权凭证。如果直接让员工个人电脑直连内网真实 MCP 实例，不仅需要对全员开放网络端口，且后端服务账密无法对员工隐藏，极易引发越权与数据泄露。
-2. **缺乏集中化工具管控与审计**：管理员无法统一控制哪些部门、哪些员工有权使用哪些内网工具，缺乏统一的调用审计日志（谁在什么时间调用了哪个 MCP 工具）。
-3. **客户端配置分发繁琐且易被篡改**：若由员工在本地客户端手工填写 MCP 服务的 URL 与 Token，维护成本极高，且员工可在本地私自添加未经批准的外部工具。
-4. **与既有大模型调度体系割裂**：组织已在 New API 中统一维护了一人一卡（Token 与用户名一一绑定，如 `zzq01`），但工具能力缺乏与现有身份与权限体系的打通。
+目前，企业已通过统一的 API 密钥网关为每位员工分配了专属的身份凭据（API Key 与登录用户名一一绑定）。然而，在将内网共享 MCP 服务赋能给员工个人电脑上的桌面协同软件（TPCowork）时，面临以下核心痛点：
+1. **网络穿透与敏感凭据暴露风险**：内网 MCP 服务通常内嵌数据库密码、内部系统服务凭证等敏感信息。若让员工电脑直连这些内部实例，不仅要求全员开放内网端口，且真实凭据直接暴露在终端侧，存在严重的未授权访问与数据泄露隐患。
+2. **缺乏统一的访问控制与工具权限分发**：不同岗位的员工对工具的需求具有明显边界（如研发人员需要数据库与脚本工具，财务人员需要报表工具，全员需要制度知识库）。目前缺乏统一的集中管控后台，无法基于员工岗位动态分发工具权限。
+3. **终端配置分散且易被篡改**：若依赖员工在本地客户端手工填写 MCP 连接配置，运维成本极高；且技术人员容易在本地篡改配置或私自接入未经授权的工具，缺乏网关层的强制硬阻断。
+4. **缺乏审计日志与高消耗工具的配额防护**：部分内网工具涉及复杂运算或高频开销，缺乏统一的调用时间、调用人及频次审计记录，无法针对高消耗工具设置调用限额与配额扣减。
 
-## Solution (解决方案)
+## Solution
 
-基于访谈确定的 **BAB + 方案 2（通用透明反代 + 字段级独立数据表 + 支持按次配额扣减 + MCP 角色工具包 RBAC 解耦）**，在 New API 构建企业级 **MCP 集中管控与反向代理网关**：
+在统一模型调度网关中构建 **企业级 MCP 注册、通用透明反向代理、RBAC 工具包解耦与统一配额审计中心**：
 
-1. **New API 充当统一 MCP 反向代理网关（Decision B - 通用透明管道）**：
-   - 暴露统一外部端点：`/mcp/:name/*any`（支持 GET、POST、SSE 长连接以及全双工流式传输）。
-   - 客户端携带原生的专属密钥（`Authorization: Bearer sk-xxxx`）发起请求。
-   - 网关不篡改、不深度侵入 MCP 内部 JSON-RPC 报文协议，实现无损、零时延的高性能透明反向代理，无缝自适应当前与未来所有 MCP 协议格式。
-2. **轻量级 RBAC 工具包角色模型（方案 2）**：
-   - 将“大模型渠道/倍率分组（Group）”与“工具权限（MCP Role）”彻底正交解耦。
-   - 引入 **MCP 工具包/角色（`mcp_roles`）** 概念：管理员将若干 MCP 编组为工具包（如【全员通用包】、【研发工具包】、【财务工具包】），并支持将常用工具包标记为“全员默认”。
-   - 在员工的 API 令牌（Token）上关联分配对应的工具包（`mcp_roles`）。当某个工具包新增或删除工具时，全员自动无感联动生效。
-3. **多维安全鉴权与阻断机制**：
-   - 请求流经网关前置中间件时，自动解析 `Bearer sk-xxxx`，合并计算出该用户当前拥有的全部可用 MCP 标识集合。
-   - 若目标 `:name` 不在集合内，立即阻断并返回 `HTTP 403 Forbidden`。
-4. **按次配额管控与调用安全审计（Decision B - 支持配额扣减）**：
-   - 在 MCP 基础信息中可指定单次调用消耗配额 `quota_per_call`（默认 `0`，内网常规共享服务不扣费，高算力任务可配置固定扣额）。
-   - 每次调用成功后，记录独立的 `LogTypeMCP` 审计明细（包含用户 ID、Token Name、MCP 标识、耗时、状态与扣额）。
-5. **客户端（TPCowork）与配置中台（SkillHub Server）自动联动闭环**：
-   - 配合扩展 SkillHub Server 的 `/api/v1/client-config` 接口，员工在 TPCowork 登录后，直接一次性获取直连 New API 的专属密钥以及该员工被授权的所有 `mcpServers` 连接清单；TPCowork 本地自动静默挂载，普通员工界面锁定不可篡改，达成 100% 集中受控。
+1. **通用透明反向代理网关（Protocol-Agnostic Proxy Engine）**：
+   - 网关对外暴露统一的代理入口，客户端发起连接时携带原生的专属 API Key。
+   - 网关不解析、不修改 MCP 协议内部的 JSON-RPC 报文结构，以通用透明管道方式转发 GET、POST、SSE 长连接事件流及双向数据，确保对当前与未来演进的所有 MCP 传输协议 100% 兼容且零性能损耗。
+2. **轻量级 RBAC 角色工具包权限解耦（MCP Roles / Profiles）**：
+   - 将“模型调用渠道/费率分组”与“工具功能权限”彻底解耦。
+   - 管理员在后台维护 MCP 服务元数据，并将服务打包为不同的“MCP 工具包/角色”（如全员通用包、研发工具包、财务工具包）。
+   - 常用通用工具包支持设为“全员默认拥有”；特定业务工具包直接与员工的 API 令牌（Token）绑定。当某个工具包内的工具增减时，所有关联员工的客户端自动同步生效，无需逐一修改用户配置。
+3. **网关层前置强阻断与身份鉴权**：
+   - 网关在收到 MCP 调用请求时，自动提取并验证 API Key，动态合并该 Key 绑定的工具包与全员默认包，计算出有效白名单。
+   - 若目标 MCP 服务未被授予该用户，网关立即阻断并返回标准的 403 Forbidden 响应，杜绝越权访问。
+4. **安全审计与按次自定义配额扣减**：
+   - 每次工具调用在网关层生成独立的审计日志，记录调用者身份、目标工具名称、耗时与状态。
+   - 支持针对特定 MCP 配置单次调用消耗配额（默认为 0 不扣费，高算力工具可配置固定扣额），调用前执行余额预检，调用完成后原子扣减账户额度。
+5. **客户端动态静默配置与协同**：
+   - 配置中台（SkillHub Server）在员工登录后下发包含直连网关、API Key 以及当前被授权的所有 MCP 服务配置清单。
+   - 桌面客户端（TPCowork）自动装载工具并在本地锁定受管状态，实现员工登录即用、全自动纳管。
 
----
+## User Stories
 
-## Architecture & Sequence Flow (全链路时序图)
+1. 作为一个企业的系统管理员，我想要在网关后台统一录入和管理内网各个 MCP 服务的名称与真实内网地址，以便将企业内网工具集中纳管在一个安全入口之后。
+2. 作为一个企业的安全审计员，我想要所有内网 MCP 服务的真实网络地址与内部访问秘钥只保存在网关服务端，以便对终端员工电脑完全屏蔽真实账密。
+3. 作为一个企业的系统管理员，我想要创建不同的“MCP 工具包”（如研发工具包、财务工具包、全员通用包），以便根据部门和岗位职责批量打包管理工具集合。
+4. 作为一个企业的系统管理员，我想要将“全员通用包”设置为默认启用，以便新员工入职或创建新令牌后自动获得基础知识库工具，无需管理员逐一手动勾选。
+5. 作为一个企业的系统管理员，我想要在某个工具包中新增或下线一个 MCP 工具时，所有属于该工具包角色的员工终端下次启动自动同步生效，以便极大降低日常权限维护成本。
+6. 作为一个企业的系统管理员，我想要在创建或编辑员工的 API 密钥时，通过多选框直接为其勾选分配特定的 MCP 工具包，以便清晰、直观地控制其专属工具权限。
+7. 作为一个企业的系统管理员，我想要为高算力或高成本的 MCP 工具设置单次调用扣减的额度，以便防止特定工具被员工高频滥用。
+8. 作为一个终端员工，我想要在个人电脑上打开 TPCowork 客户端并登录账号后，我所属岗位被批准使用的内网工具自动就绪，以便开箱即用、无需手工配置复杂的 URL 或调试参数。
+9. 作为一个终端员工，我想要在使用内网 MCP 知识库检索或数据库查询时，打字机流式响应能够无延迟实时推送到我的客户端，以便享受流畅的交互体验。
+10. 作为一个终端员工，我想要在调用付费或扣额度的 MCP 工具前如果额度不足时收到清晰的友好提示，以便及时知晓并联系管理员充值。
+11. 作为一个企业的安全管理员，我想要当任何员工在本地私自篡改客户端配置、试图调用未被授予的敏感工具时，网关能够强行阻断并返回拒绝访问状态，以便杜绝任何越权和偷跑行为。
+12. 作为一个企业的合规审计员，我想要在管理控制台的日志列表中随时检索任意时间段内所有 MCP 工具的调用人、对应 API 密钥、调用工具名称、执行耗时与状态，以便满足安全合规审计与追溯要求。
+13. 作为一个系统运维人员，我想要网关的反向代理模块对上层 MCP 协议报文保持透明传输，以便后续引入基于全新通信格式的 MCP 工具时无需升级网关代理层代码。
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Admin as 管理员
-    actor User as 员工 (zzq01)
-    participant Client as TPCowork 桌面端
-    participant SkillHub as SkillHub Server (:3002)
-    participant NewAPI as New API 网关 (:3000)
-    participant InternalMCP as 内网真实 MCP 实例集群
+## Implementation Decisions
 
-    %% 阶段 1：事前配置
-    Note over Admin, NewAPI: 阶段一：管理员在 New API 配置 MCP 服务与工具包
-    Admin->>NewAPI: 1. 注册 MCP 服务 (如 internal_kb -> http://10.0.1.20:8000)
-    Admin->>NewAPI: 2. 创建 MCP 工具包 (如 [研发工具包] 包含 internal_kb, db_query)
-    Admin->>NewAPI: 3. 在 Token/用户管理中为 zzq01 绑定 [研发工具包]
+### 1. 架构解耦与通信协议决策
+- 网关采用**协议无关的透明流式反向代理（Protocol-Agnostic Reverse Proxy）**，挂载在统一的 URL 路由规则 `/mcp/:name/*any` 之下。
+- 代理引擎负责保持持久长连接并关闭中间缓冲（配置立即刷新），完整透传 Server-Sent Events (SSE)、HTTP POST/GET 及全双工流。
+- 客户端与网关交互时严格复用现有的身份凭证传递机制（HTTP 请求头 `Authorization: Bearer sk-xxxx`）。
 
-    %% 阶段 2：客户端启动与配置动态装载
-    Note over User, Client: 阶段二：客户端启动，自动装载 MCP（员工完全无感）
-    User->>Client: 登录账号 zzq01
-    Client->>SkillHub: GET /api/v1/client-config
-    SkillHub->>NewAPI: 查询 zzq01 的 API Key (sk-xxx) 与已授权 MCP 列表
-    SkillHub-->>Client: 下发配置：<br/>{ apiKey: "sk-xxx", mcpServers: { "internal_kb": { url: "http://newapi:3000/mcp/internal_kb/sse", headers: { Authorization: "Bearer sk-xxx" } } } }
-    Client->>Client: 动态注入本地 Cordis MCP 运行时，激活工具
+### 2. RBAC 工具包权限模型与数据实体决策
+- 在数据库层新增两个独立实体，并在既有令牌实体上增加字段化关联，保持高内聚并与现有大模型渠道计费完全解耦：
+  - **MCP 服务定义实体 (`MCPServer`)**：
+    - 包含英文唯一路由标识 (`name`)、中文显示名称 (`display_name`)、后端目标地址 (`base_url`)、单次扣额 (`quota_per_call`)、启停状态 (`status`)。
+  - **MCP 工具包角色实体 (`MCPRole`)**：
+    - 包含角色唯一代号 (`name`)、角色显示名称 (`display_name`)、包含的 MCP 标识列表 (`mcp_servers`，存储为 JSON 数组)、是否全员默认拥有 (`is_default`)。
+  - **令牌实体扩展 (`Token`)**：
+    - 扩展一个可选的工具包代码列表字段 (`mcp_roles`，存储为 JSON 数组)，用于持久化当前 Key 所属的工具包集合。
 
-    %% 阶段 3：工具调用与网关鉴权
-    Note over Client, InternalMCP: 阶段三：调用内网 MCP 工具（由 New API 严格鉴权与反代）
-    Client->>NewAPI: 连接/调用 MCP 代理端点：GET/POST /mcp/internal_kb/*<br/>[Header: Authorization: Bearer sk-xxx]
-    NewAPI->>NewAPI: 提取 sk-xxx，计算 zzq01 拥有的可用 MCP 列表
+### 3. 网关鉴权拦截与可用集合计算决策
+- 请求到达网关时，前置中间件通过令牌解析出对应的用户身份与关联的角色代码集合。
+- 鉴权服务合并计算：
+  $$\text{当前可用 MCP 集合} = \bigcup_{r \in (\text{Token.mcp\_roles} \cup \text{DefaultRoles})} r.\text{mcp\_servers}$$
+- 中间件核验当前请求路由中的目标工具标识是否落在该集合内，并且该工具状态处于正常启用：
+  - 校验失败：立即中断请求链路，返回 `HTTP 403 Forbidden` 与标准 JSON 错误格式；
+  - 校验成功：将已解析的目标真实地址注入上下文，放行至代理引擎转发。
 
-    alt 拥有 internal_kb 权限
-        opt quota_per_call > 0
-            NewAPI->>NewAPI: 预检/扣减 zzq01 账户额度
-        end
-        NewAPI->>InternalMCP: 建立透明反向代理连接，转发流量
-        InternalMCP-->>NewAPI: 实时流式响应 / JSON-RPC 结果
-        NewAPI-->>Client: 原样流式透传至客户端
-        NewAPI->>NewAPI: 异步落库 MCP 调用安全审计日志
-    else 员工越权或私自调用未授权工具
-        NewAPI-->>Client: 返回 HTTP 403 Forbidden (立即阻断)
-    end
-```
+### 4. 配额原子预检与安全审计决策
+- 对于设置了 `quota_per_call > 0` 的工具服务，网关在前置检查阶段执行用户余额原子预检，余额不足直接返回 `HTTP 429 Too Many Requests`。
+- 每次代理请求建立与结束时，系统生成一条类型为 MCP 调用的审计记录，包含令牌名称、用户标识、工具标识、客户端 IP、持续时间及配额消耗，持久化至统一日志表。
 
----
+### 5. 客户端动态装载与中台协同接口决策
+- 网关对外提供令牌级自查接口 `GET /api/mcp/my-servers`，输出当前令牌所有可用的 MCP 标识、中文名及代理访问路径。
+- SkillHub Server 在现有的 `/api/v1/client-config` 接口中聚合输出当前用户的 `mcpServers` 声明块，使桌面协同客户端（TPCowork）登录即自动激活所有受管工具。
 
-## User Stories (用户故事列表)
+### 6. 控制台交互与多语言国际化决策
+- 在管理后台新增独立的「MCP 管理」交互界面，包含「MCP 服务列表」与「工具包管理」功能。
+- 在「API 令牌」的新增与编辑弹窗中，增加角色工具包的多选选择器。
+- 所有新增界面的文案与错误提示严格纳入项目前端国际化框架，覆盖全部已支持语言。
 
-1. **作为安全管理员**，我希望把内网敏感的 MCP 服务隐藏在 New API 网关之后，只对外暴露网关代理地址，防止员工直连内网或获取内部服务的真实凭证。
-2. **作为系统管理员**，我希望能够创建“工具包/角色”（如全员通用包、研发工具包、财务工具包），把相关工具打包管理，以便于在新员工入职或转岗时批量赋予工具权限。
-3. **作为系统管理员**，我希望当某个工具包追加新工具时，所有属于该角色的员工客户端下次启动时自动同步并激活新工具，无需逐一修改员工账号配置。
-4. **作为系统管理员**，我希望能够为特定高算力、高成本的 MCP 工具设置单次调用扣减的配额（`quota_per_call`），防止个别用户无节制调用导致内网资源过载。
-5. **作为终端员工 `zzq01`**，我希望打开 TPCowork 登录账号后，我所属岗位需要的内网知识库、内部数据库等工具全部自动配置就绪，无需手动拷贝复杂的 URL 和秘钥。
-6. **作为终端员工 `zzq01`**，我希望调用内网 MCP 工具时享受与直连无异的极速长连接与流式响应体验，网关反代不增加任何额外卡顿或报文序列化开销。
-7. **作为审计人员**，我希望在管理后台能够查询所有 MCP 调用的时间、操作人、调用的具体工具名称、耗时与扣减配额，以备合规审计与异常排查。
-8. **作为安全合规系统**，当未授权员工或恶意脚本尝试通过私增配置调用受限工具（如未被授予财务工具包的员工调用 `finance_export`）时，网关必须强行阻断并返回 `403 Forbidden`。
+## Testing Decisions
 
----
+### 1. 良好测试准则与边界
+- 遵循“只测试外部暴露契约，不锁定内部实现细节”的原则。
+- 测试重点聚焦于：令牌合法性与角色合并计算、越权请求阻断响应、合法长连接透明透传、以及按次配额扣减与审计记录落库。
 
-## Implementation Decisions (实施决策与设计规范)
+### 2. 核心测试场景覆盖
+- **角色合并与权限判定测试**：
+  - 断言全员默认工具包中的 MCP 能够被任意有效令牌成功访问；
+  - 断言未被显式授予特定工具包的令牌在访问私有工具时必定收到 403 阻断；
+  - 断言被授予工具包的令牌在工具包动态追加新工具后，能够立即无缝获得新工具访问权。
+- **代理管道与流式保真度测试**：
+  - 验证向代理端点发起 SSE 事件流连接时，下游客户端能原样、连续地收到后端发送的事件，无缓冲截断。
+- **配额扣减与欠费熔断测试**：
+  - 针对配置扣费的 MCP，验证调用成功后用户配额准确减少目标数值；
+  - 验证当用户可用配额小于单次扣额时，网关前置拦截并返回 429 响应，后端服务不产生实际调用。
 
-### 1. 数据模型层 (Schema - GORM 三库兼容)
+### 3. 参考规范与已有工程实践
+- 数据库操作与表迁移参考 `model/` 包中已有的 GORM 跨数据库（SQLite / PostgreSQL）自动化迁移规范。
+- 鉴权中间件测试参考现有 `middleware/auth.go` 的测试用例设计，保持接口与错误响应风格一致。
 
-在 `model/` 包中新增 MCP 相关的核心数据模型，必须严格遵循项目规范（完全兼容 SQLite、MySQL >= 5.7.8、PostgreSQL >= 9.6）：
+## Out of Scope
 
-#### (1) `model.MCPServer`（MCP 服务定义表：`mcp_servers`）
-```go
-type MCPServer struct {
-    Id           int            `json:"id" gorm:"primaryKey;autoIncrement"`
-    Name         string         `json:"name" gorm:"type:varchar(64);uniqueIndex;not null"` // 英文唯一标识，如 internal_kb
-    DisplayName  string         `json:"display_name" gorm:"type:varchar(128);not null"`    // 显示名称
-    Description  string         `json:"description" gorm:"type:text"`                      // 描述
-    BaseURL      string         `json:"base_url" gorm:"type:varchar(512);not null"`        // 内网真实目标基础地址
-    Status       int            `json:"status" gorm:"type:int;default:1;index"`            // 1: 启用, 2: 停用
-    QuotaPerCall int            `json:"quota_per_call" gorm:"type:int;default:0"`          // 单次调用扣减额度，0 表示免费
-    CreatedAt    int64          `json:"created_at" gorm:"autoCreateTime"`
-    UpdatedAt    int64          `json:"updated_at" gorm:"autoUpdateTime"`
-    DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
-}
-```
+1. **不做客户端本地 Stdio 进程的监控与强杀**：本功能聚焦于企业内网云端部署的共享 MCP 服务（SSE / HTTP），员工本地运行的临时脚本进程不属于网关反代管辖范围。
+2. **不做深度 MCP 业务报文解析与校验**：网关只做身份鉴权、访问控制、流量代理与审计，不检查 JSON-RPC 内部的参数合法性或重写工具调用的返回值。
+3. **不做针对单次工具调用的动态计费表达式计算**：严格按照按次固定额度（`quota_per_call`）进行扣减，不引入与 Token 数量挂钩的动态计费公式。
 
-#### (2) `model.MCPRole`（MCP 工具包/角色定义表：`mcp_roles`）
-```go
-type MCPRole struct {
-    Id          int            `json:"id" gorm:"primaryKey;autoIncrement"`
-    Name        string         `json:"name" gorm:"type:varchar(64);uniqueIndex;not null"` // 角色代码，如 developer
-    DisplayName string         `json:"display_name" gorm:"type:varchar(128);not null"`    // 角色名称，如 研发工具包
-    Description string         `json:"description" gorm:"type:text"`                      // 描述
-    MCPServers  string         `json:"mcp_servers" gorm:"type:text"`                      // 包含的 MCP Name 列表，JSON 数组格式如 ["internal_kb", "db_query"]
-    IsDefault   bool           `json:"is_default" gorm:"default:false;index"`             // 是否全员默认拥有（免勾选自动赋予）
-    CreatedAt   int64          `json:"created_at" gorm:"autoCreateTime"`
-    UpdatedAt   int64          `json:"updated_at" gorm:"autoUpdateTime"`
-    DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
-}
-```
+## Further Notes
 
-#### (3) `model.Token` 既有结构体扩展
-在 `model/token.go` 中的 `Token` 结构体新增：
-```go
-// MCPRoles 该令牌关联的 MCP 工具包代码列表，JSON 数组格式存储，如 ["developer"]
-MCPRoles string `json:"mcp_roles" gorm:"type:text"`
-```
-并提供配套辅助方法：
-- `func (token *Token) GetMCPRoles() ([]string, error)`
-- `func (token *Token) SetMCPRoles(roles []string) error`
-
----
-
-### 2. 网关反向代理层 (Reverse Proxy Engine)
-
-- **核心包路径**：`service/mcp/proxy.go` 与 `controller/mcp.go`。
-- **路由注册**：
-  在 `router/api-router.go` 中注册通用透明反代通道：
-  ```go
-  mcpRoute := router.Group("/mcp")
-  mcpRoute.Use(middleware.TokenAuth(), middleware.MCPPermissionCheck())
-  {
-      mcpRoute.Any("/:name/*any", controller.RelayMCPRequest)
-  }
-  ```
-- **中间件鉴权流（`middleware.MCPPermissionCheck`）**：
-  1. 通过 `middleware.TokenAuth()` 解析并验证客户端传入的 `sk-xxxx`；
-  2. 获取请求路径中的 `:name` 参数（即目标 MCP 标识）；
-  3. 读取该 Token 绑定的 `mcp_roles`，联合所有 `is_default=true` 的全局工具包，计算该 Token 实际拥有的所有有效 `mcp_servers` 集合；
-  4. 检查目标 `:name` 是否在集合内，且目标服务状态为启用：
-     - 若不在：直接中断并返回 `c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You do not have permission to access this MCP server"})`；
-     - 若在：将解析出的目标 `MCPServer` 元数据注入 `c.Set("mcp_server", server)`，放行进入下级处理。
-- **透明反向代理引擎（`controller.RelayMCPRequest`）**：
-  - 使用 Go 原生 `httputil.ReverseProxy` 实现高性能透明代理；
-  - 动态重写目标 URL：
-    - 客户端请求路径：`/mcp/:name/sse?query=1` -> 代理至：`{base_url}/sse?query=1`；
-    - 客户端请求路径：`/mcp/:name/messages` -> 代理至：`{base_url}/messages`；
-  - 完美支持长连接：设置 `FlushInterval: -1`（或 100ms），确保打字机 SSE 流式事件无缓冲即时推送到客户端；
-  - 自动剥离/替换 Host 请求头，防止内网后端虚拟主机识别失败。
-
----
-
-### 3. 审计日志与配额结算机制 (Audit & Quota Settlement)
-
-- **日志类型扩展**：在 `model/log.go` 中定义新型日志类型常量 `LogTypeMCP = 4`。
-- **额度扣减**：
-  - 若 `MCPServer.QuotaPerCall > 0`：
-    - 在请求代理成功建立后，通过 `model.DecreaseUserQuota(userId, quota)` 原子扣减对应额度；
-    - 扣减前进行余额充足性校验，若不足直接返回 `429 Too Many Requests (Quota Exceeded)`。
-- **日志持久化**：
-  - 记录每次代理的耗时、客户端 IP、Token Name、调用的 MCP Name，写入主 `Log` 表，供管理员在后台「日志」页面筛选查看。
-
----
-
-### 4. 协同管理接口与 SkillHub Server 联动 (Config Distribution)
-
-- **New API 提供客户端可用 MCP 查询接口**：
-  `GET /api/mcp/my-servers`（使用 Token 认证）
-  - 响应示例：
-    ```json
-    {
-      "success": true,
-      "data": [
-        {
-          "name": "internal_kb",
-          "display_name": "企业知识库",
-          "proxy_url": "/mcp/internal_kb/sse",
-          "description": "企业内部制度、文档与技术规范检索"
-        }
-      ]
-    }
-    ```
-- **SkillHub Server (`d:\Pyprojects\skillhubserver`) 联动适配**：
-  - 在 `backend/app/main.py` 的 `/api/v1/client-config` 接口中，根据当前登录用户的活跃 Token，动态组装标准 MCP 客户端配置块：
-    ```json
-    {
-      "baseURL": "http://192.168.1.7:3000/v1",
-      "apiKey": "sk-sLIoid...HQ4R",
-      "model": "glm-5.3",
-      "quotaStatus": "active",
-      "mcpServers": {
-        "internal_kb": {
-          "type": "sse",
-          "url": "http://192.168.1.7:3000/mcp/internal_kb/sse",
-          "headers": {
-            "Authorization": "Bearer sk-sLIoid...HQ4R"
-          }
-        }
-      }
-    }
-    ```
-  - TPCowork 桌面端启动后自动将 `mcpServers` 挂载到本地 Cordis 运行时，实现开箱即用。
-
----
-
-### 5. 控制台前端交互层 (Web Console)
-
-严格遵循前端规范与现有的 shadcn-ui + TanStack Router/Table 架构：
-1. **侧边栏导航**：在管理菜单中新增「MCP 管理」，包含两个子 Tab 或列表页面：
-   - **MCP 服务列表**：查看、新增、编辑、停用内网 MCP，配置后端真实地址与单次配额；
-   - **工具包/角色管理**：创建工具包，多选勾选包含的 MCP 服务，勾选“设为全员默认”。
-2. **令牌编辑弹窗（Key Dialog）**：
-   - 在创建与编辑 API Key 弹窗中，新增「MCP 工具包」多选下拉组件，允许为该 Key 分配特定角色包（如【研发工具包】）。
-3. **i18n 国际化完整覆盖**：
-   - 所有新增 UI 文本严格添加至 `web/src/i18n/locales/` 下全部 7 个语言文件（en, zh, zh-TW, fr, ja, ru, vi）。
-
----
-
-## Testing Decisions (测试决策与验证标准)
-
-1. **GORM 三数据库兼容性保证**：
-   - 验证 `AutoMigrate` 自动创建 `mcp_servers` 与 `mcp_roles` 表在 SQLite、PostgreSQL 下无语法错误。
-2. **权限阻断端到端测试**：
-   - Case 1 (正常代理)：拥有有效角色权限的 Key 访问 `/mcp/:name/*`，断言返回 HTTP 200 并收到内网服务输出。
-   - Case 2 (未授权拦截)：未被赋予该工具包的 Key 访问相同端点，断言返回 HTTP 403。
-   - Case 3 (无效/过期 Key)：断言返回 HTTP 401。
-   - Case 4 (配额扣减)：对配置了 `quota_per_call > 0` 的 MCP，断言调用后用户的 `used_quota` 增加且余额正确扣减。
-3. **流式长连接保持测试**：
-   - 验证 SSE 事件流能够实时打字机推送到客户端，中间反代层无缓冲截断。
+- **数据库向后兼容**：本次引入的 `mcp_servers` 与 `mcp_roles` 表均为纯新增数据表，`Token` 结构体新增的 `mcp_roles` 字段为可空文本字段，完全向下兼容老版本数据，不影响现存大模型调用与计费流程。
+- **与桌面客户端无缝集成**：由于 TPCowork 基于标准 MCP 规范（支持配置 SSE 远端端点与 Header 鉴权），本方案下发标准 `mcpServers` 结构后客户端原生即可消费，无需对客户端通信内核进行破坏性重构。

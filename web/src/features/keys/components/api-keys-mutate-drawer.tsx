@@ -79,6 +79,7 @@ import {
   getApiKey,
   getTokenAutoGroups,
 } from '../api'
+import { listMCPRoles } from '@/features/mcp/api'
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import {
   getApiKeyFormSchema,
@@ -136,6 +137,20 @@ export function ApiKeysMutateDrawer({
     queryFn: async () => requireServerSuccess(await getUserGroups()),
     enabled: open,
     staleTime: 0,
+  })
+
+  // Fetch MCP roles
+  const { data: mcpRolesData } = useQuery({
+    queryKey: ['mcp-roles'],
+    queryFn: async () => {
+      try {
+        return await listMCPRoles(1, 100)
+      } catch {
+        return { items: [], total: 0 }
+      }
+    },
+    enabled: open,
+    staleTime: 60000,
   })
 
   const {
@@ -742,6 +757,32 @@ export function ApiKeysMutateDrawer({
                             {t(
                               'Do not over-trust this feature. IP may be spoofed. Please use with nginx, CDN and other gateways.'
                             )}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='mcp_roles'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('MCP Toolkit Roles')}</FormLabel>
+                          <FormControl>
+                            <MultiSelect
+                              options={(mcpRolesData?.items ?? []).map((r) => ({
+                                label: `${r.display_name} (${r.name})`,
+                                value: r.name,
+                                hint: r.mcp_servers,
+                              }))}
+                              selected={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('Select MCP roles for this key')}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t('Assign MCP toolkits and permissions to this API key')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

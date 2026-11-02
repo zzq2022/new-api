@@ -27,6 +27,7 @@ import {
   LayoutDashboard,
   ListTodo,
   MessageSquare,
+  Network,
   PlugZap,
   Radio,
   ServerCog,
@@ -167,6 +168,12 @@ export function useSidebarData(): SidebarData {
             title: t('Task Plugins'),
             url: '/task-plugins',
             icon: PlugZap,
+            requiredRole: ROLE.SUPER_ADMIN,
+          },
+          {
+            title: t('MCP Management'),
+            url: '/mcp',
+            icon: Network,
             requiredRole: ROLE.SUPER_ADMIN,
           },
           {

@@ -103,141 +103,21 @@ export function MCPRoleAuthorizeDialog({
   if (!role) return null
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content className='max-w-lg'>
-        <Dialog.Header>
-          <Dialog.Title className='flex items-center gap-2'>
-            <ShieldCheck className='size-5 text-primary' />
-            {t('Authorize API Keys for Role')}
-          </Dialog.Title>
-          <Dialog.Description>
-            {t('Manage which API keys have access to {{name}} ({{code}}).', {
-              name: role.display_name,
-              code: role.name,
-            })}
-          </Dialog.Description>
-        </Dialog.Header>
-
-        <div className='space-y-4 py-2'>
-          {role.is_default && (
-            <div className='flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-primary'>
-              <Info className='size-4 shrink-0 mt-0.5' />
-              <div>
-                <p className='font-semibold'>
-                  {t('This role is configured as a Global Default Role.')}
-                </p>
-                <p className='text-muted-foreground mt-0.5'>
-                  {t(
-                    'All active API keys automatically have access without explicit authorization. You can still assign specific keys here.'
-                  )}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className='flex items-center justify-between gap-2'>
-            <div className='relative flex-1'>
-              <Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground' />
-              <Input
-                placeholder={t('Search API keys by name or key...')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className='pl-8 h-9'
-              />
-            </div>
-            {filteredTokens.length > 0 && (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={handleSelectAll}
-                className='h-9 text-xs shrink-0'
-              >
-                {filteredTokens.every((tk) => selectedIds.includes(tk.id))
-                  ? t('Deselect All')
-                  : t('Select All')}
-              </Button>
-            )}
-          </div>
-
-          <div className='rounded-md border'>
-            <ScrollArea className='h-64 p-2'>
-              {isLoading ? (
-                <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
-                  {t('Loading API keys...')}
-                </div>
-              ) : filteredTokens.length === 0 ? (
-                <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
-                  {t('No matching API keys found')}
-                </div>
-              ) : (
-                <div className='space-y-1.5'>
-                  {filteredTokens.map((token) => {
-                    const isChecked = selectedIds.includes(token.id)
-                    return (
-                      <div
-                        key={token.id}
-                        onClick={() => handleToggle(token.id)}
-                        className={`flex items-center justify-between rounded-md p-2.5 transition-colors cursor-pointer border ${
-                          isChecked
-                            ? 'border-primary/40 bg-primary/5'
-                            : 'border-transparent hover:bg-muted/50'
-                        }`}
-                      >
-                        <div className='flex items-center gap-3 min-w-0'>
-                          <Checkbox
-                            checked={isChecked}
-                            onCheckedChange={() => handleToggle(token.id)}
-                          />
-                          <div className='min-w-0'>
-                            <div className='flex items-center gap-1.5'>
-                              <span className='font-medium text-sm truncate'>
-                                {token.name}
-                              </span>
-                              {token.status === 1 ? (
-                                <Badge
-                                  variant='outline'
-                                  className='text-[10px] px-1 py-0 h-4 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                                >
-                                  {t('Enabled')}
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant='secondary'
-                                  className='text-[10px] px-1 py-0 h-4 text-muted-foreground'
-                                >
-                                  {t('Disabled')}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className='flex items-center gap-1 font-mono text-xs text-muted-foreground'>
-                              <Key className='size-3 shrink-0' />
-                              <span>{token.key}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {isChecked && (
-                          <Check className='size-4 text-primary shrink-0' />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-
-          <div className='flex items-center justify-between text-xs text-muted-foreground'>
-            <span>
-              {t('Selected: {{count}} of {{total}} keys', {
-                count: selectedIds.length,
-                total: tokens.length,
-              })}
-            </span>
-          </div>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <div className='flex items-center gap-2'>
+          <ShieldCheck className='size-5 text-primary' />
+          <span>{t('Authorize API Keys for Role')}</span>
         </div>
-
-        <Dialog.Footer>
+      }
+      description={t('Manage which API keys have access to {{name}} ({{code}}).', {
+        name: role.display_name,
+        code: role.name,
+      })}
+      footer={
+        <div className='flex justify-end gap-2'>
           <Button
             type='button'
             variant='outline'
@@ -252,8 +132,127 @@ export function MCPRoleAuthorizeDialog({
           >
             {mutation.isPending ? t('Saving...') : t('Save Authorization')}
           </Button>
-        </Dialog.Footer>
-      </Dialog.Content>
+        </div>
+      }
+    >
+      <div className='space-y-4 py-2'>
+        {role.is_default && (
+          <div className='flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-primary'>
+            <Info className='size-4 shrink-0 mt-0.5' />
+            <div>
+              <p className='font-semibold'>
+                {t('This role is configured as a Global Default Role.')}
+              </p>
+              <p className='text-muted-foreground mt-0.5'>
+                {t(
+                  'All active API keys automatically have access without explicit authorization. You can still assign specific keys here.'
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className='flex items-center justify-between gap-2'>
+          <div className='relative flex-1'>
+            <Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground' />
+            <Input
+              placeholder={t('Search API keys by name or key...')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className='pl-8 h-9'
+            />
+          </div>
+          {filteredTokens.length > 0 && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleSelectAll}
+              className='h-9 text-xs shrink-0'
+            >
+              {filteredTokens.every((tk) => selectedIds.includes(tk.id))
+                ? t('Deselect All')
+                : t('Select All')}
+            </Button>
+          )}
+        </div>
+
+        <div className='rounded-md border'>
+          <ScrollArea className='h-64 p-2'>
+            {isLoading ? (
+              <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
+                {t('Loading API keys...')}
+              </div>
+            ) : filteredTokens.length === 0 ? (
+              <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
+                {t('No matching API keys found')}
+              </div>
+            ) : (
+              <div className='space-y-1.5'>
+                {filteredTokens.map((token) => {
+                  const isChecked = selectedIds.includes(token.id)
+                  return (
+                    <div
+                      key={token.id}
+                      onClick={() => handleToggle(token.id)}
+                      className={`flex items-center justify-between rounded-md p-2.5 transition-colors cursor-pointer border ${
+                        isChecked
+                          ? 'border-primary/40 bg-primary/5'
+                          : 'border-transparent hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className='flex items-center gap-3 min-w-0'>
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => handleToggle(token.id)}
+                        />
+                        <div className='min-w-0'>
+                          <div className='flex items-center gap-1.5'>
+                            <span className='font-medium text-sm truncate'>
+                              {token.name}
+                            </span>
+                            {token.status === 1 ? (
+                              <Badge
+                                variant='outline'
+                                className='text-[10px] px-1 py-0 h-4 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                              >
+                                {t('Enabled')}
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant='secondary'
+                                className='text-[10px] px-1 py-0 h-4 text-muted-foreground'
+                              >
+                                {t('Disabled')}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className='flex items-center gap-1 font-mono text-xs text-muted-foreground'>
+                            <Key className='size-3 shrink-0' />
+                            <span>{token.key}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isChecked && (
+                        <Check className='size-4 text-primary shrink-0' />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        <div className='flex items-center justify-between text-xs text-muted-foreground'>
+          <span>
+            {t('Selected: {{count}} of {{total}} keys', {
+              count: selectedIds.length,
+              total: tokens.length,
+            })}
+          </span>
+        </div>
+      </div>
     </Dialog>
   )
 }

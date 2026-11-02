@@ -199,7 +199,17 @@ export function transformApiKeyToFormDefaults(
     auto_groups_mode: autoGroupsMode,
     auto_groups: autoGroups,
     cross_group_retry: !!apiKey.cross_group_retry,
-    mcp_roles: apiKey.mcp_roles ? apiKey.mcp_roles.split(',').filter(Boolean) : [],
+    mcp_roles: (() => {
+      const raw = apiKey.mcp_roles?.trim()
+      if (!raw) return []
+      if (raw.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean)
+        } catch {}
+      }
+      return raw.split(',').map((s) => s.trim()).filter(Boolean)
+    })(),
     tokenCount: 1,
   }
 }

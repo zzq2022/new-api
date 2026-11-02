@@ -351,7 +351,7 @@ func (token *Token) Update() (err error) {
 	}
 	return DB.Model(token).Select("name", "status", "expired_time", "remain_quota", "unlimited_quota",
 		"model_limits_enabled", "model_limits", "allow_ips", "group", "cross_group_retry", "auto_groups",
-		"allow_user_quota_query").Updates(token).Error
+		"allow_user_quota_query", "mcp_roles").Updates(token).Error
 }
 
 func (token *Token) SelectUpdate() (err error) {

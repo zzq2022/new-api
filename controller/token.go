@@ -364,6 +364,8 @@ func AddToken(c *gin.Context) {
 		AutoGroups:         token.AutoGroups,
 	}
 	cleanToken.AllowUserQuotaQuery = request.AllowUserQuotaQuery == nil || *request.AllowUserQuotaQuery
+	mcpRoles, _ := token.GetMCPRoles()
+	_ = cleanToken.SetMCPRoles(mcpRoles)
 	err = cleanToken.Insert()
 	if err != nil {
 		common.ApiError(c, err)
@@ -459,6 +461,8 @@ func UpdateToken(c *gin.Context) {
 		if request.AllowUserQuotaQuery != nil {
 			cleanToken.AllowUserQuotaQuery = *request.AllowUserQuotaQuery
 		}
+		mcpRoles, _ := token.GetMCPRoles()
+		_ = cleanToken.SetMCPRoles(mcpRoles)
 		cleanToken.Group = token.Group
 		cleanToken.CrossGroupRetry = token.CrossGroupRetry
 		if token.Group != "auto" {

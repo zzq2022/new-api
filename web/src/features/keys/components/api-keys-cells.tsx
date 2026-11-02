@@ -177,10 +177,16 @@ export function IpRestrictionsCell(props: ApiKeyRestrictionProps) {
 
 export function McpRolesCell(props: ApiKeyRestrictionProps) {
   const { t } = useTranslation()
-  const roles = (props.apiKey.mcp_roles || '')
-    .split(',')
-    .map((r) => r.trim())
-    .filter(Boolean)
+  const raw = props.apiKey.mcp_roles?.trim() || ''
+  let roles: string[] = []
+  if (raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) roles = parsed.map(String).filter(Boolean)
+    } catch {}
+  } else if (raw) {
+    roles = raw.split(',').map((r) => r.trim()).filter(Boolean)
+  }
 
   return (
     <ApiKeyRestrictionCell

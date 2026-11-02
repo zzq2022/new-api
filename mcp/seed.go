@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 package mcp
 
 import (
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 )
 
@@ -129,28 +130,43 @@ func SeedBuiltinPresets() error {
 	}
 
 	// 1. 初始化默认金融投研工具包
-	financeServers := "juyuan,caihui_mcp,hexin-ifind-ds-stock-mcp,hexin-ifind-ds-fund-mcp,hexin-ifind-ds-edb-mcp,hexin-ifind-ds-news-mcp,hexin-ifind-ds-bond-mcp,hexin-ifind-ds-global-stock-mcp,hexin-ifind-ds-index-mcp"
+	financeServers := []string{
+		"juyuan", "caihui_mcp", "hexin-ifind-ds-stock-mcp", "hexin-ifind-ds-fund-mcp",
+		"hexin-ifind-ds-edb-mcp", "hexin-ifind-ds-news-mcp", "hexin-ifind-ds-bond-mcp",
+		"hexin-ifind-ds-global-stock-mcp", "hexin-ifind-ds-index-mcp",
+	}
+	financeData, _ := common.Marshal(financeServers)
+	financeJSON := string(financeData)
+
 	var financeRole MCPRole
 	if err := model.DB.Where("name = ?", "finance_suite").First(&financeRole).Error; err != nil {
 		_ = model.DB.Create(&MCPRole{
 			Name:        "finance_suite",
 			DisplayName: "金融投研工具包",
 			Description: "包含同花顺 iFinD、财汇数据与聚源金融的全面金融数据能力",
-			MCPServers:  financeServers,
+			MCPServers:  financeJSON,
 			IsDefault:   true,
 		}).Error
+	} else if financeRole.MCPServers != financeJSON {
+		_ = model.DB.Model(&financeRole).Update("mcp_servers", financeJSON).Error
 	}
 
 	// 2. 初始化默认联网搜索工具包
+	searchServers := []string{"anysearch"}
+	searchData, _ := common.Marshal(searchServers)
+	searchJSON := string(searchData)
+
 	var searchRole MCPRole
 	if err := model.DB.Where("name = ?", "search_suite").First(&searchRole).Error; err != nil {
 		_ = model.DB.Create(&MCPRole{
 			Name:        "search_suite",
 			DisplayName: "联网搜索工具包",
 			Description: "包含 AnySearch 高质量实时互联网聚合搜索服务",
-			MCPServers:  "anysearch",
+			MCPServers:  searchJSON,
 			IsDefault:   true,
 		}).Error
+	} else if searchRole.MCPServers != searchJSON {
+		_ = model.DB.Model(&searchRole).Update("mcp_servers", searchJSON).Error
 	}
 
 	return nil

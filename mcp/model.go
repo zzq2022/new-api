@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
@@ -117,12 +118,22 @@ func GetAllMCPServers(paged bool, page int, pageSize int) ([]*MCPServer, int64, 
 // ---- MCPRole Operations ----
 
 func (role *MCPRole) GetMCPServers() ([]string, error) {
-	if role.MCPServers == "" {
+	trimmed := strings.TrimSpace(role.MCPServers)
+	if trimmed == "" {
 		return []string{}, nil
 	}
 	var servers []string
-	if err := common.UnmarshalJsonStr(role.MCPServers, &servers); err != nil {
-		return nil, err
+	if strings.HasPrefix(trimmed, "[") {
+		if err := common.UnmarshalJsonStr(trimmed, &servers); err == nil {
+			return servers, nil
+		}
+	}
+	parts := strings.Split(trimmed, ",")
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			servers = append(servers, p)
+		}
 	}
 	return servers, nil
 }

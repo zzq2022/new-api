@@ -14,6 +14,7 @@ type MCPServer struct {
 	DisplayName  string         `json:"display_name" gorm:"type:varchar(128);not null"`    // 显示名称
 	Description  string         `json:"description" gorm:"type:text"`                      // 描述说明
 	BaseURL      string         `json:"base_url" gorm:"type:varchar(512);not null"`        // 内网真实目标基础地址
+	Headers      string         `json:"headers" gorm:"type:text"`                          // 上游鉴权与自定义请求头 (JSON 格式)
 	Status       int            `json:"status" gorm:"type:int;default:1;index"`            // 1: 启用, 2: 停用
 	QuotaPerCall int            `json:"quota_per_call" gorm:"type:int;default:0"`          // 单次调用扣减额度，0 表示免费
 	CreatedAt    int64          `json:"created_at" gorm:"autoCreateTime"`
@@ -42,7 +43,10 @@ func InitDatabase() error {
 	if model.DB == nil {
 		return nil
 	}
-	return model.DB.AutoMigrate(&MCPServer{}, &MCPRole{})
+	if err := model.DB.AutoMigrate(&MCPServer{}, &MCPRole{}); err != nil {
+		return err
+	}
+	return SeedBuiltinPresets()
 }
 
 // ---- MCPServer Operations ----

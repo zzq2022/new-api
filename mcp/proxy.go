@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/gin-gonic/gin"
@@ -67,8 +68,27 @@ func ProxyMCPRequest(c *gin.Context, server *MCPServer, token *model.Token) {
 			req.URL.Scheme = targetURL.Scheme
 			req.URL.Host = targetURL.Host
 			req.URL.Path = singleJoiningSlash(targetURL.Path, subPath)
-			req.URL.RawQuery = c.Request.URL.RawQuery
+
+			// 合并 query 参数（如 juyuan 内嵌的 ?token=...）
+			if targetURL.RawQuery == "" {
+				req.URL.RawQuery = c.Request.URL.RawQuery
+			} else if c.Request.URL.RawQuery == "" {
+				req.URL.RawQuery = targetURL.RawQuery
+			} else {
+				req.URL.RawQuery = targetURL.RawQuery + "&" + c.Request.URL.RawQuery
+			}
+
 			req.Host = targetURL.Host
+
+			// 注入上游配置的鉴权请求头（覆盖客户端传来的 New API Token）
+			if server.Headers != "" {
+				var headersMap map[string]string
+				if err := common.UnmarshalJsonStr(server.Headers, &headersMap); err == nil {
+					for k, v := range headersMap {
+						req.Header.Set(k, v)
+					}
+				}
+			}
 		},
 		FlushInterval: -1, // 立即刷新，确保 SSE 长连接实时推送
 		ErrorHandler: func(rw http.ResponseWriter, req *http.Request, proxyErr error) {

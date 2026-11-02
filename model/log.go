@@ -90,6 +90,7 @@ const (
 	LogTypeError   = 5
 	LogTypeRefund  = 6
 	LogTypeLogin   = 7
+	LogTypeMCP     = 8
 )
 
 func ensureLogRequestId(log *Log) {
@@ -477,6 +478,55 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 			NodeName:  nodeName,
 		})
 	}
+}
+
+type RecordMCPLogParams struct {
+	TokenId        int
+	TokenName      string
+	MCPName        string
+	Quota          int
+	UseTimeSeconds int
+	Content        string
+}
+
+func RecordMCPLog(c *gin.Context, userId int, params RecordMCPLogParams) {
+	if LOG_DB == nil {
+		return
+	}
+	username := c.GetString("username")
+	if username == "" && userId > 0 && common.RedisEnabled {
+		username, _ = GetUsernameById(userId, false)
+	}
+	requestId := c.GetString(common.RequestIdKey)
+	createdAt := common.GetTimestamp()
+
+	needRecordIp := false
+	if settingMap, err := GetUserSetting(userId, false); err == nil {
+		if settingMap.RecordIpLog {
+			needRecordIp = true
+		}
+	}
+
+	log := &Log{
+		UserId:    userId,
+		Username:  username,
+		CreatedAt: createdAt,
+		Type:      LogTypeMCP,
+		Content:   params.Content,
+		TokenName: params.TokenName,
+		ModelName: params.MCPName,
+		Quota:     params.Quota,
+		TokenId:   params.TokenId,
+		UseTime:   params.UseTimeSeconds,
+		Ip: func() string {
+			if needRecordIp {
+				return c.ClientIP()
+			}
+			return ""
+		}(),
+		RequestId: requestId,
+	}
+	_ = createLog(log)
 }
 
 // LogFilter is the usage-log search shared by the log list and the log export.

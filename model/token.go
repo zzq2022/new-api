@@ -31,7 +31,32 @@ type Token struct {
 	AutoGroups         string         `json:"-" gorm:"type:text"`
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
 	// 允许用此令牌查询所属用户的额度；新建令牌默认开启，已有令牌升级后保持关闭
-	AllowUserQuotaQuery bool `json:"allow_user_quota_query"`
+	AllowUserQuotaQuery bool   `json:"allow_user_quota_query"`
+	MCPRoles            string `json:"mcp_roles" gorm:"type:text"`
+}
+
+func (token *Token) GetMCPRoles() ([]string, error) {
+	if token.MCPRoles == "" {
+		return []string{}, nil
+	}
+	var roles []string
+	if err := common.UnmarshalJsonStr(token.MCPRoles, &roles); err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
+func (token *Token) SetMCPRoles(roles []string) error {
+	if len(roles) == 0 {
+		token.MCPRoles = "[]"
+		return nil
+	}
+	data, err := common.Marshal(roles)
+	if err != nil {
+		return err
+	}
+	token.MCPRoles = string(data)
+	return nil
 }
 
 func (token *Token) GetAutoGroups() ([]string, error) {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/mcp"
 	"github.com/QuantumNous/new-api/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ func SetRouter(router *gin.Engine, assets WebAssets) {
 	SetTaskPluginProtocolRouter(router)
 	SetVideoRouter(router)
 	SetTaskRouter(router)
+	mcp.RegisterRoutes(router)
 	pluginDispatcher := SetPluginRouter(router)
 	frontendBaseUrl := os.Getenv("FRONTEND_BASE_URL")
 	if common.IsMasterNode && frontendBaseUrl != "" {

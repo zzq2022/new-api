@@ -43,6 +43,8 @@ func RegisterRoutes(router *gin.Engine) {
 			adminGroup.POST("/roles", AdminCreateMCPRole)
 			adminGroup.PUT("/roles", AdminUpdateMCPRole)
 			adminGroup.DELETE("/roles/:id", AdminDeleteMCPRole)
+			adminGroup.GET("/roles/:id/tokens", AdminGetMCPRoleTokens)
+			adminGroup.POST("/roles/:id/tokens", AdminAuthorizeMCPRoleTokens)
 		}
 	}
 }

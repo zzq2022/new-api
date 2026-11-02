@@ -36,12 +36,22 @@ type Token struct {
 }
 
 func (token *Token) GetMCPRoles() ([]string, error) {
-	if token.MCPRoles == "" {
+	trimmed := strings.TrimSpace(token.MCPRoles)
+	if trimmed == "" {
 		return []string{}, nil
 	}
 	var roles []string
-	if err := common.UnmarshalJsonStr(token.MCPRoles, &roles); err != nil {
-		return nil, err
+	if strings.HasPrefix(trimmed, "[") {
+		if err := common.UnmarshalJsonStr(trimmed, &roles); err == nil {
+			return roles, nil
+		}
+	}
+	parts := strings.Split(trimmed, ",")
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			roles = append(roles, p)
+		}
 	}
 	return roles, nil
 }

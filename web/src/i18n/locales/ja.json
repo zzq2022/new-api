@@ -2863,7 +2863,7 @@
     "footer.columns.related.links.oneApi": "1つのAPI",
     "footer.columns.related.title": "関連プロジェクト",
     "footer.defaultCopyright": "すべての権利を留保します。",
-    "footer.new\u0061pi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
+    "footer.newapi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "高度なカスタムチャネルでは、プロトコル変換を行わない /v1/responses ルートにのみ適用されます。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "2025 年 5 月 10 日以降に追加されたチャネルの場合、デプロイ時にモデル名から「.」を削除する必要はありません",
     "For private deployments, format: https://fastgpt.run/api/openapi": "プライベートデプロイメントの場合、形式: https://fastgpt.run/api/openapi",
@@ -7406,5 +7406,20 @@
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V 4",
     "Zoom": "ズーム"
-  }
+  },
+  "MCP Roles": "MCP ロール",
+  "{{count}} roles": "{{count}} 個のロール",
+  "Authorize API Keys": "API キーを承認",
+  "Authorize API Keys for Role": "ロールに API キーを承認",
+  "Manage which API keys have access to {{name}} ({{code}}).": "{{name}} ({{code}}) へのアクセス権を持つ API キーを管理します。",
+  "This role is configured as a Global Default Role.": "このロールはグローバルデフォルトロールとして設定されています。",
+  "All active API keys automatically have access without explicit authorization. You can still assign specific keys here.": "すべてのアクティブな API キーは自動的にアクセス権を持ちます。ここから特定のキーを割り当てることもできます。",
+  "Search API keys by name or key...": "名前またはキーで検索...",
+  "Deselect All": "すべて選択解除",
+  "Select All": "すべて選択",
+  "Loading API keys...": "API キーを読み込み中...",
+  "No matching API keys found": "一致する API キーが見つかりません",
+  "Save Authorization": "承認を保存",
+  "API keys authorization updated successfully": "API キーの承認が正常に更新されました",
+  "Selected: {{count}} of {{total}} keys": "選択済み: {{total}} 件中 {{count}} 件"
 }

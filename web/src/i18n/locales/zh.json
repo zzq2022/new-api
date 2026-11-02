@@ -2863,7 +2863,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "相关项目",
     "footer.defaultCopyright": "版权所有。",
-    "footer.new\u0061pi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
+    "footer.newapi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "高级自定义渠道仅对 /v1/responses 且不做协议转换的路由生效。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "对于 2025 年 5 月 10 日之后添加的渠道，在部署时无需从模型名称中移除 \".\"",
     "For private deployments, format: https://fastgpt.run/api/openapi": "对于私有部署，格式为：https://fastgpt.run/api/openapi",
@@ -7406,5 +7406,20 @@
     "Zhipu GLM": "智谱GLM",
     "Zhipu V4": "智谱 V4",
     "Zoom": "缩放"
-  }
+  },
+  "MCP Roles": "MCP 角色",
+  "{{count}} roles": "{{count}} 个角色",
+  "Authorize API Keys": "授权 API 密钥",
+  "Authorize API Keys for Role": "为角色授权 API 密钥",
+  "Manage which API keys have access to {{name}} ({{code}}).": "管理哪些 API 密钥拥有 {{name}} ({{code}}) 的访问权限。",
+  "This role is configured as a Global Default Role.": "该角色已配置为全局默认角色。",
+  "All active API keys automatically have access without explicit authorization. You can still assign specific keys here.": "系统内所有有效 API 密钥免勾选自动拥有该权限，此处仍可按需明确关联。",
+  "Search API keys by name or key...": "按名称或密钥搜索...",
+  "Deselect All": "取消全选",
+  "Select All": "全选",
+  "Loading API keys...": "正在加载 API 密钥...",
+  "No matching API keys found": "未找到匹配的 API 密钥",
+  "Save Authorization": "保存授权",
+  "API keys authorization updated successfully": "API 密钥授权更新成功",
+  "Selected: {{count}} of {{total}} keys": "已选择：{{total}} 个密钥中的 {{count}} 个"
 }

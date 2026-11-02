@@ -264,3 +264,142 @@ func AdminDeleteMCPRole(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": ""})
 }
+
+// ==========================================
+// Admin MCPRole <-> Token 授权关联
+// ==========================================
+
+type AuthorizeRoleTokensRequest struct {
+	TokenIds []int `json:"token_ids"`
+}
+
+func AdminGetMCPRoleTokens(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "Invalid ID parameter"})
+		return
+	}
+	role, err := GetMCPRoleById(id)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "MCP role not found"})
+		return
+	}
+
+	var tokens []model.Token
+	if err := model.DB.Select("id", "name", "key", "status", "mcp_roles").Order("id desc").Find(&tokens).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	var authorizedIds []int
+	type tokenSummary struct {
+		Id       int    `json:"id"`
+		Name     string `json:"name"`
+		Key      string `json:"key"`
+		Status   int    `json:"status"`
+		Selected bool   `json:"selected"`
+	}
+	var tokenList []tokenSummary
+
+	for _, t := range tokens {
+		roles, _ := t.GetMCPRoles()
+		hasRole := false
+		for _, r := range roles {
+			if r == role.Name {
+				hasRole = true
+				break
+			}
+		}
+		if hasRole {
+			authorizedIds = append(authorizedIds, t.Id)
+		}
+
+		maskedKey := t.Key
+		if len(t.Key) > 14 {
+			maskedKey = t.Key[:8] + "******" + t.Key[len(t.Key)-4:]
+		}
+
+		tokenList = append(tokenList, tokenSummary{
+			Id:       t.Id,
+			Name:     t.Name,
+			Key:      maskedKey,
+			Status:   t.Status,
+			Selected: hasRole,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"role":                 role,
+			"authorized_token_ids": authorizedIds,
+			"tokens":               tokenList,
+		},
+	})
+}
+
+func AdminAuthorizeMCPRoleTokens(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "Invalid ID parameter"})
+		return
+	}
+	role, err := GetMCPRoleById(id)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "MCP role not found"})
+		return
+	}
+
+	var req AuthorizeRoleTokensRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	targetMap := make(map[int]bool, len(req.TokenIds))
+	for _, tid := range req.TokenIds {
+		targetMap[tid] = true
+	}
+
+	var tokens []model.Token
+	if err := model.DB.Select("id", "mcp_roles").Find(&tokens).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+		return
+	}
+
+	tx := model.DB.Begin()
+	for _, t := range tokens {
+		roles, _ := t.GetMCPRoles()
+		hasRole := false
+		filteredRoles := make([]string, 0, len(roles))
+		for _, r := range roles {
+			if r == role.Name {
+				hasRole = true
+			} else {
+				filteredRoles = append(filteredRoles, r)
+			}
+		}
+
+		shouldHave := targetMap[t.Id]
+		if shouldHave && !hasRole {
+			filteredRoles = append(filteredRoles, role.Name)
+			_ = t.SetMCPRoles(filteredRoles)
+			if err := tx.Model(&model.Token{}).Where("id = ?", t.Id).Update("mcp_roles", t.MCPRoles).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+				return
+			}
+		} else if !shouldHave && hasRole {
+			_ = t.SetMCPRoles(filteredRoles)
+			if err := tx.Model(&model.Token{}).Where("id = ?", t.Id).Update("mcp_roles", t.MCPRoles).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
+				return
+			}
+		}
+	}
+	tx.Commit()
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Tokens authorized successfully"})
+}

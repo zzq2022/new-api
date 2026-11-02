@@ -2863,7 +2863,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "Related Projects",
     "footer.defaultCopyright": "All rights reserved.",
-    "footer.new\u0061pi.projectAttributionSuffix": "All rights reserved. Designed and developed by the project contributors.",
+    "footer.newapi.projectAttributionSuffix": "All rights reserved. Designed and developed by the project contributors.",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment",
     "For private deployments, format: https://fastgpt.run/api/openapi": "For private deployments, format: https://fastgpt.run/api/openapi",
@@ -7406,5 +7406,20 @@
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V4",
     "Zoom": "Zoom"
-  }
+  },
+  "MCP Roles": "MCP Roles",
+  "{{count}} roles": "{{count}} roles",
+  "Authorize API Keys": "Authorize API Keys",
+  "Authorize API Keys for Role": "Authorize API Keys for Role",
+  "Manage which API keys have access to {{name}} ({{code}}).": "Manage which API keys have access to {{name}} ({{code}}).",
+  "This role is configured as a Global Default Role.": "This role is configured as a Global Default Role.",
+  "All active API keys automatically have access without explicit authorization. You can still assign specific keys here.": "All active API keys automatically have access without explicit authorization. You can still assign specific keys here.",
+  "Search API keys by name or key...": "Search API keys by name or key...",
+  "Deselect All": "Deselect All",
+  "Select All": "Select All",
+  "Loading API keys...": "Loading API keys...",
+  "No matching API keys found": "No matching API keys found",
+  "Save Authorization": "Save Authorization",
+  "API keys authorization updated successfully": "API keys authorization updated successfully",
+  "Selected: {{count}} of {{total}} keys": "Selected: {{count}} of {{total}} keys"
 }

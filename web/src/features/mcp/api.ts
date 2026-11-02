@@ -117,3 +117,32 @@ export async function deleteMCPRole(id: number) {
   }>(`/api/mcp/roles/${id}`, mutationConfig)
   return requireServerSuccess(response.data)
 }
+
+export type MCPRoleTokensResponse = {
+  role: MCPRole
+  authorized_token_ids: number[]
+  tokens: Array<{
+    id: number
+    name: string
+    key: string
+    status: number
+    selected: boolean
+  }>
+}
+
+export async function getMCPRoleTokens(id: number) {
+  const response = await api.get<{
+    success: boolean
+    message: string
+    data: MCPRoleTokensResponse
+  }>(`/api/mcp/roles/${id}/tokens`)
+  return requireServerSuccess(response.data).data
+}
+
+export async function authorizeMCPRoleTokens(id: number, tokenIds: number[]) {
+  const response = await api.post<{
+    success: boolean
+    message: string
+  }>(`/api/mcp/roles/${id}/tokens`, { token_ids: tokenIds }, mutationConfig)
+  return requireServerSuccess(response.data)
+}

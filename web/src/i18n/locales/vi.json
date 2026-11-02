@@ -2863,7 +2863,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "Các Dự Án Liên Quan",
     "footer.defaultCopyright": "Bản quyền được bảo lưu.",
-    "footer.new\u0061pi.projectAttributionSuffix": "Bản quyền được bảo lưu. Được thiết kế và phát triển bởi các cộng tác viên dự án.",
+    "footer.newapi.projectAttributionSuffix": "Bản quyền được bảo lưu. Được thiết kế và phát triển bởi các cộng tác viên dự án.",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "Với kênh tùy chỉnh nâng cao, thiết lập này chỉ áp dụng cho các route /v1/responses không chuyển đổi giao thức.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Đối với các kênh được thêm sau ngày 10 tháng 5 năm 2025, không cần loại bỏ \".\" khỏi tên mô hình trong quá trình triển khai",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Đối với các triển khai riêng tư, định dạng: https://fastgpt.run/api/openapi",
@@ -7406,5 +7406,20 @@
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V4",
     "Zoom": "Zoom"
-  }
+  },
+  "MCP Roles": "Vai trò MCP",
+  "{{count}} roles": "{{count}} vai trò",
+  "Authorize API Keys": "Ủy quyền khóa API",
+  "Authorize API Keys for Role": "Ủy quyền khóa API cho vai trò",
+  "Manage which API keys have access to {{name}} ({{code}}).": "Quản lý khóa API nào có quyền truy cập vào {{name}} ({{code}}).",
+  "This role is configured as a Global Default Role.": "Vai trò này được đặt là vai trò mặc định toàn cục.",
+  "All active API keys automatically have access without explicit authorization. You can still assign specific keys here.": "Tất cả các khóa API đang hoạt động tự động có quyền truy cập. Bạn vẫn có thể gán các khóa cụ thể tại đây.",
+  "Search API keys by name or key...": "Tìm kiếm khóa API theo tên hoặc khóa...",
+  "Deselect All": "Bỏ chọn tất cả",
+  "Select All": "Chọn tất cả",
+  "Loading API keys...": "Đang tải khóa API...",
+  "No matching API keys found": "Không tìm thấy khóa API phù hợp",
+  "Save Authorization": "Lưu ủy quyền",
+  "API keys authorization updated successfully": "Cập nhật ủy quyền khóa API thành công",
+  "Selected: {{count}} of {{total}} keys": "Đã chọn: {{count}} trên {{total}} khóa"
 }

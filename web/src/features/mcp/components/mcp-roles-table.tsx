@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Edit2, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Edit2, Key, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -46,6 +46,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 
 import { deleteMCPRole, listMCPRoles } from '../api'
 import type { MCPRole } from '../types'
+import { MCPRoleAuthorizeDialog } from './mcp-role-authorize-dialog'
 import { MCPRoleDialog } from './mcp-role-dialog'
 
 export function MCPRolesTable() {
@@ -53,6 +54,8 @@ export function MCPRolesTable() {
   const queryClient = useQueryClient()
   const [editingRole, setEditingRole] = useState<MCPRole | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [authorizingRole, setAuthorizingRole] = useState<MCPRole | null>(null)
+  const [authorizeOpen, setAuthorizeOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<MCPRole | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -171,6 +174,15 @@ export function MCPRolesTable() {
                       <DropdownMenuContent align='end'>
                         <DropdownMenuItem
                           onClick={() => {
+                            setAuthorizingRole(role)
+                            setAuthorizeOpen(true)
+                          }}
+                        >
+                          <Key className='mr-2 size-4' />
+                          {t('Authorize API Keys')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
                             setEditingRole(role)
                             setDialogOpen(true)
                           }}
@@ -194,6 +206,15 @@ export function MCPRolesTable() {
           </TableBody>
         </Table>
       </div>
+
+      <MCPRoleAuthorizeDialog
+        open={authorizeOpen}
+        onOpenChange={(open) => {
+          setAuthorizeOpen(open)
+          if (!open) setAuthorizingRole(null)
+        }}
+        role={authorizingRole}
+      />
 
       <MCPRoleDialog
         open={dialogOpen}

@@ -175,6 +175,28 @@ export function IpRestrictionsCell(props: ApiKeyRestrictionProps) {
   )
 }
 
+export function McpRolesCell(props: ApiKeyRestrictionProps) {
+  const { t } = useTranslation()
+  const roles = (props.apiKey.mcp_roles || '')
+    .split(',')
+    .map((r) => r.trim())
+    .filter(Boolean)
+
+  return (
+    <ApiKeyRestrictionCell
+      items={roles}
+      label={
+        roles.length > 0
+          ? t('{{count}} roles', { count: roles.length })
+          : t('Default')
+      }
+      title={t('MCP Roles')}
+      emptyLabel={t('Default')}
+      detailsTrigger={props.detailsTrigger}
+    />
+  )
+}
+
 function ApiKeyRestrictionCell(props: {
   items: string[]
   label: string

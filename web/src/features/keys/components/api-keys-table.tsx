@@ -57,7 +57,7 @@ import { ApiKeyActivityCell } from './api-key-timestamp-cell'
 import {
   ApiKeyCell,
   ModelLimitsCell,
-  IpRestrictionsCell,
+  McpRolesCell,
 } from './api-keys-cells'
 import { useApiKeysColumns } from './api-keys-columns'
 import { useApiKeys } from './api-keys-provider'
@@ -188,7 +188,7 @@ function ApiKeysMobileList({
 
             <div className='flex flex-wrap items-center gap-x-5 gap-y-1'>
               <ModelLimitsCell apiKey={apiKey} detailsTrigger='click' />
-              <IpRestrictionsCell apiKey={apiKey} detailsTrigger='click' />
+              <McpRolesCell apiKey={apiKey} detailsTrigger='click' />
             </div>
 
             <div className='grid grid-cols-3 items-start gap-3 border-t pt-2'>

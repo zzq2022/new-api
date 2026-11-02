@@ -7421,5 +7421,8 @@
   "No matching API keys found": "Không tìm thấy khóa API phù hợp",
   "Save Authorization": "Lưu ủy quyền",
   "API keys authorization updated successfully": "Cập nhật ủy quyền khóa API thành công",
-  "Selected: {{count}} of {{total}} keys": "Đã chọn: {{count}} trên {{total}} khóa"
+  "Selected: {{count}} of {{total}} keys": "Đã chọn: {{count}} trên {{total}} khóa",
+  "Key Disabled": "Khóa bị vô hiệu",
+  "Authorized": "Đã ủy quyền",
+  "Not Authorized": "Chưa ủy quyền"
 }

@@ -7421,5 +7421,8 @@
   "No matching API keys found": "Подходящие ключи API не найдены",
   "Save Authorization": "Сохранить авторизацию",
   "API keys authorization updated successfully": "Авторизация ключей API успешно обновлена",
-  "Selected: {{count}} of {{total}} keys": "Выбрано: {{count}} из {{total}} ключей"
+  "Selected: {{count}} of {{total}} keys": "Выбрано: {{count}} из {{total}} ключей",
+  "Key Disabled": "Ключ отключен",
+  "Authorized": "Авторизовано",
+  "Not Authorized": "Не авторизовано"
 }

@@ -7421,5 +7421,8 @@
   "No matching API keys found": "未找到相符的 API 金鑰",
   "Save Authorization": "儲存授權",
   "API keys authorization updated successfully": "API 金鑰授權更新成功",
-  "Selected: {{count}} of {{total}} keys": "已選取：{{total}} 個金鑰中的 {{count}} 個"
+  "Selected: {{count}} of {{total}} keys": "已選取：{{total}} 個金鑰中的 {{count}} 個",
+  "Key Disabled": "金鑰已停用",
+  "Authorized": "已授權",
+  "Not Authorized": "未授權"
 }

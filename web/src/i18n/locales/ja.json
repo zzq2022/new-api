@@ -7421,5 +7421,8 @@
   "No matching API keys found": "一致する API キーが見つかりません",
   "Save Authorization": "承認を保存",
   "API keys authorization updated successfully": "API キーの承認が正常に更新されました",
-  "Selected: {{count}} of {{total}} keys": "選択済み: {{total}} 件中 {{count}} 件"
+  "Selected: {{count}} of {{total}} keys": "選択済み: {{total}} 件中 {{count}} 件",
+  "Key Disabled": "キーが無効",
+  "Authorized": "承認済み",
+  "Not Authorized": "未承認"
 }

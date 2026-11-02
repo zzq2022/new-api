@@ -210,19 +210,12 @@ export function MCPRoleAuthorizeDialog({
                             <span className='font-medium text-sm truncate'>
                               {token.name}
                             </span>
-                            {token.status === 1 ? (
+                            {token.status !== 1 && (
                               <Badge
-                                variant='outline'
-                                className='text-[10px] px-1 py-0 h-4 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                                variant='destructive'
+                                className='text-[10px] px-1 py-0 h-4'
                               >
-                                {t('Enabled')}
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant='secondary'
-                                className='text-[10px] px-1 py-0 h-4 text-muted-foreground'
-                              >
-                                {t('Disabled')}
+                                {t('Key Disabled')}
                               </Badge>
                             )}
                           </div>
@@ -233,9 +226,20 @@ export function MCPRoleAuthorizeDialog({
                         </div>
                       </div>
 
-                      {isChecked && (
-                        <Check className='size-4 text-primary shrink-0' />
-                      )}
+                      <div>
+                        {isChecked ? (
+                          <Badge
+                            variant='outline'
+                            className='text-xs font-normal border-primary/40 text-primary bg-primary/10'
+                          >
+                            {t('Authorized')}
+                          </Badge>
+                        ) : (
+                          <span className='text-xs text-muted-foreground mr-1'>
+                            {t('Not Authorized')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )
                 })}

@@ -7421,5 +7421,8 @@
   "No matching API keys found": "Aucune clé API correspondante trouvée",
   "Save Authorization": "Enregistrer l'autorisation",
   "API keys authorization updated successfully": "Autorisation des clés API mise à jour avec succès",
-  "Selected: {{count}} of {{total}} keys": "Sélectionné : {{count}} sur {{total}} clés"
+  "Selected: {{count}} of {{total}} keys": "Sélectionné : {{count}} sur {{total}} clés",
+  "Key Disabled": "Clé désactivée",
+  "Authorized": "Autorisé",
+  "Not Authorized": "Non autorisé"
 }

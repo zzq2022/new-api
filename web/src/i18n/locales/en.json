@@ -7421,5 +7421,8 @@
   "No matching API keys found": "No matching API keys found",
   "Save Authorization": "Save Authorization",
   "API keys authorization updated successfully": "API keys authorization updated successfully",
-  "Selected: {{count}} of {{total}} keys": "Selected: {{count}} of {{total}} keys"
+  "Selected: {{count}} of {{total}} keys": "Selected: {{count}} of {{total}} keys",
+  "Key Disabled": "Key Disabled",
+  "Authorized": "Authorized",
+  "Not Authorized": "Not Authorized"
 }

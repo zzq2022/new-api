@@ -39,7 +39,7 @@ export type SidebarSectionConfig = {
 export type SidebarModulesAdminConfig = Record<string, SidebarSectionConfig>
 
 export const HEADER_NAV_DEFAULT: HeaderNavModulesConfig = {
-  home: true,
+  home: false,
   console: true,
   pricing: {
     enabled: true,
@@ -49,15 +49,15 @@ export const HEADER_NAV_DEFAULT: HeaderNavModulesConfig = {
     enabled: true,
     requireAuth: false,
   },
-  docs: true,
-  about: true,
+  docs: false,
+  about: false,
 }
 
 export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
   chat: {
-    enabled: true,
-    playground: true,
-    chat: true,
+    enabled: false,
+    playground: false,
+    chat: false,
   },
   console: {
     enabled: true,
@@ -78,10 +78,10 @@ export const SIDEBAR_MODULES_DEFAULT: SidebarModulesAdminConfig = {
     enabled: true,
     channel: true,
     models: true,
-    redemption: true,
+    redemption: false,
     user: true,
     setting: true,
-    subscription: true,
+    subscription: false,
   },
 }
 

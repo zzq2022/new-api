@@ -37,7 +37,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { handleServerError } from '@/lib/handle-server-error'
 
@@ -235,27 +234,6 @@ export function MCPRoleDialog({
                   />
                 </FormControl>
                 <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name='is_default'
-            render={({ field }) => (
-              <FormItem className='flex items-center justify-between rounded-lg border p-3'>
-                <div className='space-y-0.5'>
-                  <FormLabel>{t('Default Role')}</FormLabel>
-                  <FormDescription>
-                    {t('Automatically granted to all tokens by default')}
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
               </FormItem>
             )}
           />

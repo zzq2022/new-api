@@ -122,35 +122,36 @@ func TestPermissionCheckAndResolution(t *testing.T) {
 	require.NoError(t, defaultRole.SetMCPServers([]string{"internal_kb"}))
 	require.NoError(t, defaultRole.Insert())
 
-	// Case 1: 普通用户令牌（未关联 dev 角色）
+	// Case 1: 普通用户令牌（未关联任何 MCP 角色，严格遵循“没有就是没有”原则）
 	normalToken := &model.Token{
-		Id:     1,
-		UserId: 10,
-		Key:    "sk-normal",
-		Name:   "zzq_normal",
+		Id:         1,
+		UserId:     10,
+		Key:        "sk-normal",
+		ApikeyName: "张之清01",
+		Name:       "zzq01",
 	}
 	require.NoError(t, normalToken.SetMCPRoles([]string{}))
 	require.NoError(t, model.DB.Create(normalToken).Error)
 
 	serversMap, err := GetAuthorizedMCPServersForToken(normalToken)
 	require.NoError(t, err)
-	assert.Contains(t, serversMap, "internal_kb", "普通令牌应自动获得默认公共工具")
-	assert.NotContains(t, serversMap, "sql_tool", "普通令牌不应具有研发专属工具")
+	assert.Empty(t, serversMap, "未显式配置 MCP 角色的普通令牌不应自动获得任何工具，必须为空")
 
-	// Case 2: 研发人员令牌（关联 dev 角色）
+	// Case 2: 研发人员令牌（显式关联 dev 角色）
 	devToken := &model.Token{
-		Id:     2,
-		UserId: 11,
-		Key:    "sk-dev",
-		Name:   "zzq_dev",
+		Id:         2,
+		UserId:     11,
+		Key:        "sk-dev",
+		ApikeyName: "研发01",
+		Name:       "dev01",
 	}
 	require.NoError(t, devToken.SetMCPRoles([]string{"dev"}))
 	require.NoError(t, model.DB.Create(devToken).Error)
 
 	devServers, err := GetAuthorizedMCPServersForToken(devToken)
 	require.NoError(t, err)
-	assert.Contains(t, devServers, "internal_kb", "研发人员同时拥有公共工具")
-	assert.Contains(t, devServers, "sql_tool", "研发人员拥有研发工具")
+	assert.NotContains(t, devServers, "internal_kb", "未显式关联公共角色时不自动继承默认工具")
+	assert.Contains(t, devServers, "sql_tool", "显式关联 dev 角色后拥有对应的研发工具")
 }
 
 func TestMCPTransparentReverseProxy(t *testing.T) {
@@ -238,4 +239,49 @@ func newCloseNotifyingRecorder() *closeNotifyingRecorder {
 
 func (c *closeNotifyingRecorder) CloseNotify() <-chan bool {
 	return c.closed
+}
+
+func TestTokenApikeyNameAndSearch(t *testing.T) {
+	setupTestMCPDB(t)
+
+	token1 := &model.Token{
+		UserId:     100,
+		Key:        "sk-test-1",
+		ApikeyName: "张之清01",
+		Name:       "zzq01",
+		Status:     1,
+	}
+	require.NoError(t, token1.Insert())
+
+	token2 := &model.Token{
+		UserId:     100,
+		Key:        "sk-test-2",
+		ApikeyName: "李四02",
+		Name:       "ls02",
+		Status:     1,
+	}
+	require.NoError(t, token2.Insert())
+
+	// 1. 按 ApikeyName 搜索
+	results, total, err := model.SearchUserTokens(100, "张之清", "", 0, 10)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, total)
+	require.Len(t, results, 1)
+	assert.Equal(t, "张之清01", results[0].ApikeyName)
+	assert.Equal(t, "zzq01", results[0].Name)
+
+	// 2. 按 Name 搜索
+	results, total, err = model.SearchUserTokens(100, "zzq", "", 0, 10)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, total)
+	require.Len(t, results, 1)
+	assert.Equal(t, "张之清01", results[0].ApikeyName)
+
+	// 3. 更新 ApikeyName
+	token1.ApikeyName = "张之清-已修改"
+	require.NoError(t, token1.Update())
+
+	found, err := model.GetTokenById(token1.Id)
+	require.NoError(t, err)
+	assert.Equal(t, "张之清-已修改", found.ApikeyName)
 }

@@ -123,6 +123,7 @@ export type MCPRoleTokensResponse = {
   authorized_token_ids: number[]
   tokens: Array<{
     id: number
+    apikey_name?: string
     name: string
     key: string
     status: number

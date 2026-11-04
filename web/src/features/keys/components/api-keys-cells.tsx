@@ -194,10 +194,10 @@ export function McpRolesCell(props: ApiKeyRestrictionProps) {
       label={
         roles.length > 0
           ? t('{{count}} roles', { count: roles.length })
-          : t('Default')
+          : t('None')
       }
       title={t('MCP Roles')}
-      emptyLabel={t('Default')}
+      emptyLabel={t('None')}
       detailsTrigger={props.detailsTrigger}
     />
   )

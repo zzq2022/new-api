@@ -56,6 +56,7 @@ import { ApiKeyQuotaCell } from './api-key-quota-cell'
 import { ApiKeyActivityCell } from './api-key-timestamp-cell'
 import {
   ApiKeyCell,
+  IpRestrictionsCell,
   ModelLimitsCell,
   McpRolesCell,
 } from './api-keys-cells'
@@ -155,8 +156,13 @@ function ApiKeysMobileList({
             <div className='flex items-start justify-between gap-3'>
               <div className='min-w-0'>
                 <div className='text-sm leading-5 font-semibold break-words'>
-                  {apiKey.name}
+                  {apiKey.apikey_name || apiKey.name}
                 </div>
+                {apiKey.apikey_name && (
+                  <div className='text-xs text-muted-foreground font-mono'>
+                    {apiKey.name}
+                  </div>
+                )}
               </div>
               {statusConfig && (
                 <StatusBadge
@@ -188,6 +194,7 @@ function ApiKeysMobileList({
 
             <div className='flex flex-wrap items-center gap-x-5 gap-y-1'>
               <ModelLimitsCell apiKey={apiKey} detailsTrigger='click' />
+              <IpRestrictionsCell apiKey={apiKey} detailsTrigger='click' />
               <McpRolesCell apiKey={apiKey} detailsTrigger='click' />
             </div>
 

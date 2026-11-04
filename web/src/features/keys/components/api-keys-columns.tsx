@@ -40,6 +40,7 @@ import {
 } from './api-key-timestamp-cell'
 import {
   ApiKeyCell,
+  IpRestrictionsCell,
   McpRolesCell,
   ModelLimitsCell,
 } from './api-keys-cells'
@@ -104,13 +105,24 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
         size: 40,
       },
       {
-        accessorKey: 'name',
-        header: t('Name'),
+        id: 'apikey_name',
+        accessorKey: 'apikey_name',
+        header: t('API Key Name'),
         cell: ({ row }) => (
-          <span className='font-medium'>{row.getValue('name')}</span>
+          <span className='font-medium'>{row.original.apikey_name || '-'}</span>
         ),
         size: 180,
         meta: { mobileTitle: true },
+      },
+      {
+        id: 'name',
+        accessorKey: 'name',
+        header: t('Name'),
+        cell: ({ row }) => (
+          <span className='font-mono text-xs text-muted-foreground'>{row.getValue('name')}</span>
+        ),
+        size: 140,
+        meta: { mobileHidden: true },
       },
       {
         accessorKey: 'status',
@@ -180,6 +192,15 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
         accessorKey: 'mcp_roles',
         header: t('MCP Roles'),
         cell: ({ row }) => <McpRolesCell apiKey={row.original} />,
+        enableSorting: false,
+        size: 160,
+        meta: { mobileHidden: true },
+      },
+      {
+        id: 'allow_ips',
+        accessorKey: 'allow_ips',
+        header: t('IP Restriction'),
+        cell: ({ row }) => <IpRestrictionsCell apiKey={row.original} />,
         enableSorting: false,
         size: 160,
         meta: { mobileHidden: true },

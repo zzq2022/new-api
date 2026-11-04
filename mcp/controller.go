@@ -286,18 +286,19 @@ func AdminGetMCPRoleTokens(c *gin.Context) {
 	}
 
 	var tokens []model.Token
-	if err := model.DB.Select("id", "name", "key", "status", "mcp_roles").Order("id desc").Find(&tokens).Error; err != nil {
+	if err := model.DB.Select("id", "apikey_name", "name", "key", "status", "mcp_roles").Order("id desc").Find(&tokens).Error; err != nil {
 		c.JSON(http.StatusOK, gin.H{"success": false, "message": err.Error()})
 		return
 	}
 
 	var authorizedIds []int
 	type tokenSummary struct {
-		Id       int    `json:"id"`
-		Name     string `json:"name"`
-		Key      string `json:"key"`
-		Status   int    `json:"status"`
-		Selected bool   `json:"selected"`
+		Id         int    `json:"id"`
+		ApikeyName string `json:"apikey_name"`
+		Name       string `json:"name"`
+		Key        string `json:"key"`
+		Status     int    `json:"status"`
+		Selected   bool   `json:"selected"`
 	}
 	var tokenList []tokenSummary
 
@@ -320,11 +321,12 @@ func AdminGetMCPRoleTokens(c *gin.Context) {
 		}
 
 		tokenList = append(tokenList, tokenSummary{
-			Id:       t.Id,
-			Name:     t.Name,
-			Key:      maskedKey,
-			Status:   t.Status,
-			Selected: hasRole,
+			Id:         t.Id,
+			ApikeyName: t.ApikeyName,
+			Name:       t.Name,
+			Key:        maskedKey,
+			Status:     t.Status,
+			Selected:   hasRole,
 		})
 	}
 

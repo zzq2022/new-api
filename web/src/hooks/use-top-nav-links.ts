@@ -62,8 +62,8 @@ export function useTopNavLinks(): TopNavLink[] {
 
   const links: TopNavLink[] = []
 
-  // Home
-  if (modules?.home !== false) {
+  // Home (hidden by default)
+  if (modules?.home === true) {
     links.push({ title: t('Home'), href: '/' })
   }
 
@@ -86,8 +86,8 @@ export function useTopNavLinks(): TopNavLink[] {
     links.push({ title: t('Rankings'), href: '/rankings', requiresAuth })
   }
 
-  // Docs (supports external links)
-  if (modules?.docs !== false) {
+  // Docs (hidden by default)
+  if (modules?.docs === true) {
     if (docsLink) {
       links.push({ title: t('Docs'), href: docsLink, external: true })
     } else {
@@ -95,8 +95,8 @@ export function useTopNavLinks(): TopNavLink[] {
     }
   }
 
-  // About
-  if (modules?.about !== false) {
+  // About (hidden by default)
+  if (modules?.about === true) {
     links.push({ title: t('About'), href: '/about' })
   }
 

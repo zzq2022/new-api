@@ -40,9 +40,12 @@ export const Route = createFileRoute('/(auth)/sign-in')({
 
     // 如果已经有用户信息，说明已登录
     if (auth.user) {
+      const sanitized = sanitizeAuthRedirect(
+        search?.redirect,
+        window.location.origin
+      )
       const target =
-        sanitizeAuthRedirect(search?.redirect, window.location.origin) ??
-        '/dashboard'
+        !sanitized || sanitized === '/' ? '/dashboard' : sanitized
       throw redirect({ href: target, replace: true })
     }
   },

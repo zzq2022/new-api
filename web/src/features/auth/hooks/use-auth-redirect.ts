@@ -63,8 +63,12 @@ export function useAuthRedirect() {
         await i18n.changeLanguage(savedLang)
       }
 
+      const sanitized = sanitizeAuthRedirect(
+        redirectTo,
+        window.location.origin
+      )
       const targetPath =
-        sanitizeAuthRedirect(redirectTo, window.location.origin) ?? '/dashboard'
+        !sanitized || sanitized === '/' ? '/dashboard' : sanitized
       await navigate({ href: targetPath, replace: true })
     },
     [navigate, sessionID]
@@ -93,10 +97,16 @@ export function useAuthRedirect() {
           'Login flow expired. Please sign in again.'
         )
       }
+      const pendingRedirect = sanitizeAuthRedirect(
+        redirectTo,
+        window.location.origin
+      )
       useAuthStore.getState().auth.setPendingLoginVerification({
         challenge: result,
         redirectTo:
-          sanitizeAuthRedirect(redirectTo, window.location.origin) ?? undefined,
+          !pendingRedirect || pendingRedirect === '/'
+            ? '/dashboard'
+            : pendingRedirect,
       })
       await navigate({ to: '/otp', replace: true })
       return false

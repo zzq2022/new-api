@@ -308,6 +308,10 @@ func AddToken(c *gin.Context) {
 		common.ApiErrorT(c, "Token name is too long")
 		return
 	}
+	if len(token.ApikeyName) > 128 {
+		common.ApiErrorT(c, "Token name is too long")
+		return
+	}
 	params := tokenAuditParams(c)
 	params["name"] = token.Name
 	// 非无限额度时，检查额度值是否超出有效范围
@@ -349,6 +353,7 @@ func AddToken(c *gin.Context) {
 	}
 	cleanToken := model.Token{
 		UserId:             c.GetInt("id"),
+		ApikeyName:         strings.TrimSpace(token.ApikeyName),
 		Name:               token.Name,
 		Key:                key,
 		CreatedTime:        common.GetTimestamp(),
@@ -419,6 +424,10 @@ func UpdateToken(c *gin.Context) {
 		common.ApiErrorT(c, "Token name is too long")
 		return
 	}
+	if len(token.ApikeyName) > 128 {
+		common.ApiErrorT(c, "Token name is too long")
+		return
+	}
 	if !token.UnlimitedQuota {
 		if token.RemainQuota < 0 {
 			common.ApiErrorT(c, "Quota value cannot be negative")
@@ -451,6 +460,7 @@ func UpdateToken(c *gin.Context) {
 		cleanToken.Status = token.Status
 	} else {
 		// If you add more fields, please also update token.Update()
+		cleanToken.ApikeyName = strings.TrimSpace(token.ApikeyName)
 		cleanToken.Name = token.Name
 		cleanToken.ExpiredTime = token.ExpiredTime
 		cleanToken.RemainQuota = token.RemainQuota

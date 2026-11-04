@@ -14,23 +14,16 @@ func GetAuthorizedMCPServersForToken(token *model.Token) (map[string]*MCPServer,
 		return nil, fmt.Errorf("token is nil")
 	}
 
-	roleNameSet := make(map[string]struct{})
-
-	// 1. 获取全局默认的角色/工具包（所有有效用户免勾选自动拥有）
-	defaultRoles, err := GetDefaultMCPRoles()
-	if err == nil {
-		for _, r := range defaultRoles {
-			roleNameSet[r.Name] = struct{}{}
-		}
+	// 获取该 Token 显式关联的 MCP 角色代码列表（严格遵循显式授权原则，未配置则无任何工具权限）
+	tokenRoles, err := token.GetMCPRoles()
+	if err != nil || len(tokenRoles) == 0 {
+		return map[string]*MCPServer{}, nil
 	}
 
-	// 2. 获取该 Token 显式关联的 MCP 角色代码列表
-	tokenRoles, err := token.GetMCPRoles()
-	if err == nil {
-		for _, rName := range tokenRoles {
-			if rName != "" {
-				roleNameSet[rName] = struct{}{}
-			}
+	roleNameSet := make(map[string]struct{})
+	for _, rName := range tokenRoles {
+		if rName != "" {
+			roleNameSet[rName] = struct{}{}
 		}
 	}
 

@@ -102,7 +102,6 @@ export function MCPRolesTable() {
               <TableHead>{t('Identifier')}</TableHead>
               <TableHead>{t('Display Name')}</TableHead>
               <TableHead>{t('Bundled Servers')}</TableHead>
-              <TableHead className='w-32'>{t('Default Role')}</TableHead>
               <TableHead className='w-20 text-right'>{t('Actions')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -149,18 +148,6 @@ export function MCPRolesTable() {
                         </span>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {role.is_default ? (
-                      <Badge
-                        variant='outline'
-                        className='border-primary/40 text-primary bg-primary/10'
-                      >
-                        {t('Default')}
-                      </Badge>
-                    ) : (
-                      <span className='text-xs text-muted-foreground'>-</span>
-                    )}
                   </TableCell>
                   <TableCell className='text-right'>
                     <DropdownMenu>

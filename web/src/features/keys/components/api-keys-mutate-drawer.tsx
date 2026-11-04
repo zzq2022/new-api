@@ -327,6 +327,10 @@ export function ApiKeysMutateDrawer({
         for (let i = 0; i < count; i++) {
           const result = await createApiKey({
             ...basePayload,
+            apikey_name:
+              i === 0 && data.apikey_name
+                ? data.apikey_name
+                : `${data.apikey_name || 'key'}-${i + 1}`,
             name:
               i === 0 && data.name
                 ? data.name
@@ -417,12 +421,29 @@ export function ApiKeysMutateDrawer({
               />
               <FormField
                 control={form.control}
+                name='apikey_name'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('API Key Name')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={t('e.g. Zhang Zhiqing 01')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name='name'
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('Name')}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder={t('Enter a name')} />
+                      <Input {...field} placeholder={t('e.g. zzq01')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Info, Key, Search, ShieldCheck } from 'lucide-react'
+import { Key, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -80,7 +80,9 @@ export function MCPRoleAuthorizeDialog({
     const q = search.toLowerCase()
     return tokens.filter(
       (tk) =>
-        tk.name.toLowerCase().includes(q) || tk.key.toLowerCase().includes(q)
+        tk.name.toLowerCase().includes(q) ||
+        (tk.apikey_name && tk.apikey_name.toLowerCase().includes(q)) ||
+        tk.key.toLowerCase().includes(q)
     )
   }, [tokens, search])
 
@@ -136,22 +138,6 @@ export function MCPRoleAuthorizeDialog({
       }
     >
       <div className='space-y-4 py-2'>
-        {role.is_default && (
-          <div className='flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-primary'>
-            <Info className='size-4 shrink-0 mt-0.5' />
-            <div>
-              <p className='font-semibold'>
-                {t('This role is configured as a Global Default Role.')}
-              </p>
-              <p className='text-muted-foreground mt-0.5'>
-                {t(
-                  'All active API keys automatically have access without explicit authorization. You can still assign specific keys here.'
-                )}
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className='flex items-center justify-between gap-2'>
           <div className='relative flex-1'>
             <Search className='absolute left-2.5 top-2.5 size-4 text-muted-foreground' />
@@ -208,7 +194,9 @@ export function MCPRoleAuthorizeDialog({
                         <div className='min-w-0'>
                           <div className='flex items-center gap-1.5'>
                             <span className='font-medium text-sm truncate'>
-                              {token.name}
+                              {token.apikey_name
+                                ? `${token.apikey_name} (${token.name})`
+                                : token.name}
                             </span>
                             {token.status !== 1 && (
                               <Badge
